@@ -1,0 +1,161 @@
+title: Reverse shell command line
+id: vigil-0101
+name: reverse_shell
+description: Command line patterns used to spawn a reverse shell back to an attacker.
+level: critical
+tags:
+  - attack.execution
+  - attack.t1059.004
+  - attack.command-and-control
+  - attack.t1071
+logsource:
+  product: linux
+  category: process_creation
+detection:
+  sel_devtcp:
+    CommandLine|contains: '/dev/tcp/'
+  sel_nc:
+    Image|endswith:
+      - '/nc'
+      - '/ncat'
+      - '/netcat'
+      - '/nc.traditional'
+    CommandLine|contains:
+      - ' -e '
+      - ' -c '
+  sel_script:
+    CommandLine|re: '(python[0-9.]*|perl|ruby|php) .*(socket|fsockopen|TCPSocket).*(exec|spawn|subprocess|/bin/(ba)?sh)'
+  sel_mkfifo:
+    CommandLine|contains|all:
+      - 'mkfifo'
+      - 'nc '
+  condition: 1 of sel_*
+response:
+  action: kill_process
+  args:
+    pid: process.pid
+---
+title: Download piped into a shell
+id: vigil-0102
+name: curl_pipe_shell
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.004
+  - attack.t1105
+logsource:
+  product: linux
+  category: process_creation
+detection:
+  selection:
+    CommandLine|re: '(curl|wget)[^|]*\|\s*(sudo\s+)?(ba|z|da)?sh'
+  condition: selection
+---
+title: Execution from a world-writable temp directory
+id: vigil-0103
+name: exec_from_tmp
+level: high
+tags:
+  - attack.execution
+  - attack.defense-evasion
+  - attack.t1036
+logsource:
+  product: linux
+  category: process_creation
+detection:
+  selection:
+    Image|startswith:
+      - '/tmp/'
+      - '/dev/shm/'
+      - '/var/tmp/'
+  condition: selection
+---
+title: Shell history cleared or disabled
+id: vigil-0104
+name: history_tampering
+level: high
+tags:
+  - attack.defense-evasion
+  - attack.t1070.003
+logsource:
+  product: linux
+  category: process_creation
+detection:
+  selection:
+    CommandLine|contains:
+      - 'history -c'
+      - 'rm -f ~/.bash_history'
+      - 'rm ~/.bash_history'
+      - '.bash_history /dev/null'
+      - 'unset HISTFILE'
+      - 'HISTSIZE=0'
+  condition: selection
+---
+title: Cryptocurrency miner process
+id: vigil-0105
+name: crypto_miner
+level: high
+tags:
+  - attack.impact
+  - attack.t1496
+logsource:
+  product: linux
+  category: process_creation
+detection:
+  sel_name:
+    process.name:
+      - xmrig
+      - minerd
+      - cpuminer
+      - kdevtmpfsi
+      - kinsing
+  sel_args:
+    CommandLine|contains:
+      - 'stratum+tcp://'
+      - '--donate-level'
+      - 'cryptonight'
+  condition: 1 of sel_*
+response:
+  action: kill_process
+  args:
+    pid: process.pid
+---
+title: Kernel module loaded manually
+id: vigil-0106
+name: kernel_module_load
+level: medium
+tags:
+  - attack.persistence
+  - attack.t1547.006
+logsource:
+  product: linux
+  category: process_creation
+detection:
+  selection:
+    process.name:
+      - insmod
+      - modprobe
+  filter:
+    CommandLine|contains: ' -r '
+  condition: selection and not filter
+---
+title: Network scanning tool executed
+id: vigil-0107
+name: scanner_tool
+level: medium
+tags:
+  - attack.discovery
+  - attack.t1046
+logsource:
+  product: linux
+  category: process_creation
+detection:
+  selection:
+    process.name:
+      - nmap
+      - masscan
+      - zmap
+      - nikto
+      - sqlmap
+      - hydra
+  condition: selection

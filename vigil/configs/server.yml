@@ -1,0 +1,37 @@
+# Vigil server configuration. Every key can also be set as VIGIL_<KEY>.
+listen: :8443
+data_dir: /var/lib/vigil
+rules_dir: /opt/vigil/rules          # bundled rules; custom rules go to <data_dir>/rules
+feeds_dir: /opt/vigil/feeds          # vulnerability feeds (*.json)
+
+tls: true                            # self-signed cert is generated; agents pin its fingerprint
+# cert_file: /etc/vigil/tls/server.crt
+# key_file: /etc/vigil/tls/server.key
+
+# enrollment_key: ""                 # generated on first run into <data_dir>/enrollment.key
+# admin_password: ""                 # generated on first run and printed to the log
+
+syslog_listen: :5514                 # agentless devices (UDP+TCP); "" disables
+
+min_alert_level: low                 # lower matches still feed correlation rules
+dedup_window: 60s                    # repeats folded into one alert
+agent_timeout: 90s                   # silence before "agent disconnected" alert
+
+notify_level: high
+# webhook_url: https://hooks.slack.com/services/XXX   # Slack/Teams/any JSON webhook
+# smtp_host: smtp.example.com:587
+# smtp_user: alerts@example.com
+# smtp_pass: secret
+# smtp_from: vigil@example.com
+# smtp_to: soc@example.com
+
+auto_response: true                  # run `response:` blocks from rules
+response_allowlist:                  # never auto-blocked
+  - 127.0.0.0/8
+  - ::1
+  - 10.0.0.0/8
+  - 192.168.0.0/16
+
+retention_days: 30                   # on-disk event archive
+max_events: 200000                   # events kept in memory for fast search
+max_alerts: 50000

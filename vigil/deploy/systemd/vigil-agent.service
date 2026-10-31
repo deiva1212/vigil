@@ -1,0 +1,17 @@
+[Unit]
+Description=Vigil endpoint agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# root is required to read auth logs, hash system files, inspect all
+# processes and apply firewall blocks.
+ExecStart=/usr/local/bin/vigil-agent -config /etc/vigil/agent.yml
+Restart=always
+RestartSec=5
+Nice=5
+CPUQuota=25%
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target

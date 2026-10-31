@@ -1,0 +1,36 @@
+title: New listening port opened
+id: vigil-0150
+name: new_listening_port
+description: A process started listening on a new port; unexpected listeners can be backdoors or bind shells.
+level: low
+tags:
+  - attack.persistence
+  - attack.command-and-control
+  - attack.t1571
+logsource:
+  category: network_connection
+detection:
+  selection:
+    event.action: listen_port_opened
+  condition: selection
+---
+title: Listener on a port commonly used by attack tools
+id: vigil-0151
+name: suspicious_listening_port
+level: high
+tags:
+  - attack.command-and-control
+  - attack.t1571
+logsource:
+  category: network_connection
+detection:
+  selection:
+    event.action: listen_port_opened
+    destination.port:
+      - '4444'
+      - '1337'
+      - '31337'
+      - '5555'
+      - '6666'
+      - '9001'
+  condition: selection

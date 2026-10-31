@@ -1,0 +1,148 @@
+title: Critical account file modified
+id: vigil-0201
+name: fim_account_files
+description: A file controlling local accounts or privileges changed.
+level: high
+tags:
+  - attack.persistence
+  - attack.privilege-escalation
+  - attack.t1098
+compliance:
+  - PCI-DSS 11.5.2
+  - HIPAA 164.312(c)(2)
+  - NIST-800-53 SI-7
+logsource:
+  product: linux
+  category: file_change
+detection:
+  selection:
+    file.path:
+      - /etc/passwd
+      - /etc/shadow
+      - /etc/group
+      - /etc/gshadow
+      - /etc/sudoers
+    event.action:
+      - modified
+      - deleted
+  sel_sudoers_d:
+    file.path|startswith: /etc/sudoers.d/
+  condition: 1 of sel*
+---
+title: SSH authorized_keys modified
+id: vigil-0202
+name: fim_authorized_keys
+level: high
+tags:
+  - attack.persistence
+  - attack.t1098.004
+logsource:
+  product: linux
+  category: file_change
+detection:
+  selection:
+    file.path|endswith: '/.ssh/authorized_keys'
+  condition: selection
+---
+title: Cron job created or modified
+id: vigil-0203
+name: fim_cron
+level: medium
+tags:
+  - attack.persistence
+  - attack.execution
+  - attack.t1053.003
+logsource:
+  product: linux
+  category: file_change
+detection:
+  selection:
+    file.path|startswith:
+      - /etc/cron
+      - /var/spool/cron/
+      - /etc/crontab
+  condition: selection
+---
+title: Systemd service created or modified
+id: vigil-0204
+name: fim_systemd
+level: medium
+tags:
+  - attack.persistence
+  - attack.t1543.002
+logsource:
+  product: linux
+  category: file_change
+detection:
+  selection:
+    file.path|startswith:
+      - /etc/systemd/system/
+      - /usr/lib/systemd/system/
+      - /lib/systemd/system/
+    file.path|endswith: '.service'
+  condition: selection
+---
+title: Possible web shell dropped in web root
+id: vigil-0205
+name: fim_webshell
+level: high
+tags:
+  - attack.persistence
+  - attack.t1505.003
+logsource:
+  product: linux
+  category: file_change
+detection:
+  selection:
+    file.path|startswith:
+      - /var/www/
+      - /usr/share/nginx/html/
+      - /srv/http/
+    file.path|endswith:
+      - .php
+      - .jsp
+      - .aspx
+      - .phtml
+    event.action: added
+  condition: selection
+response:
+  action: quarantine_file
+  args:
+    path: file.path
+---
+title: SSH server configuration changed
+id: vigil-0206
+name: fim_sshd_config
+level: medium
+tags:
+  - attack.defense-evasion
+  - attack.t1562
+compliance:
+  - PCI-DSS 2.2.4
+  - CIS 5.2
+logsource:
+  product: linux
+  category: file_change
+detection:
+  selection:
+    file.path|startswith: /etc/ssh/sshd_config
+  condition: selection
+---
+title: Monitored file changed
+id: vigil-0299
+name: fim_generic
+description: Any change detected by file integrity monitoring.
+level: informational
+tags:
+  - attack.t1565.001
+compliance:
+  - PCI-DSS 11.5.2
+logsource:
+  category: file_change
+detection:
+  selection:
+    event.action:
+      - added
+      - modified
+      - deleted
+  condition: selection

@@ -1,0 +1,69 @@
+title: Windows failed logon
+id: vigil-2001
+name: win_failed_logon
+level: low
+tags:
+  - attack.credential-access
+  - attack.t1110
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: '4625'
+  condition: selection
+---
+title: Windows security log cleared
+id: vigil-2002
+name: win_log_cleared
+level: high
+tags:
+  - attack.defense-evasion
+  - attack.t1070.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID:
+      - '1102'
+      - '104'
+  condition: selection
+---
+title: Encoded PowerShell command
+id: vigil-2003
+name: win_encoded_powershell
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_img:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+  selection_cli:
+    CommandLine|windash|contains:
+      - ' -enc '
+      - ' -EncodedCommand '
+      - ' -e JAB'
+  condition: all of selection_*
+---
+title: Windows account added to local administrators
+id: vigil-2004
+name: win_admin_group_add
+level: high
+tags:
+  - attack.persistence
+  - attack.t1098
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: '4732'
+    TargetUserName|contains: 'Administrators'
+  condition: selection

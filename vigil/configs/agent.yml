@@ -1,0 +1,58 @@
+# Vigil agent configuration (Linux defaults shown).
+server: https://vigil.example.com:8443
+enrollment_key: PASTE_FROM_SERVER        # only used for first registration
+server_fingerprint: PASTE_FROM_SERVER    # pins the server certificate (Settings > Add an endpoint)
+# ca_file: /etc/vigil/ca.pem             # alternative to pinning when using your own CA
+# name: web-01                           # defaults to the hostname
+group: default
+state_dir: /var/lib/vigil-agent
+
+intervals:
+  heartbeat: 10s
+  fim: 5m
+  inventory: 1h
+  sca: 12h
+  processes: 2s
+  network: 30s
+
+logs:
+  - /var/log/auth.log
+  - /var/log/secure
+  - /var/log/syslog
+  - /var/log/nginx/access.log
+  - /var/log/audit/audit.log
+  - path: /var/log/app/*.json            # globs are expanded every 30s
+  # - command: journalctl -f -n0 -o short-iso   # stream any command's output
+
+fim:
+  realtime: true                         # inotify on Linux, plus periodic scans
+  max_file_mb: 50
+  paths:
+    - /etc
+    - /usr/bin
+    - /usr/sbin
+    - /root/.ssh
+    - /var/spool/cron
+    - /var/www
+  ignore:
+    - /etc/mtab
+    - "*.swp"
+
+processes:
+  enabled: true
+network:
+  enabled: true
+inventory:
+  enabled: true
+sca:
+  enabled: true
+  # policy: /etc/vigil/my-policy.yml     # defaults to the built-in baseline for this OS
+
+active_response:
+  enabled: true
+  dry_run: false                         # log what would happen without doing it
+  allowed: [block_ip, unblock_ip, kill_process, quarantine_file, restore_file, run_sca, run_inventory, run_fim, restart_agent]
+  quarantine_allowed_prefixes: [/tmp/, /var/tmp/, /dev/shm/, /home/, /var/www/, /srv/, /opt/]
+
+# windows_eventlog:
+#   channels: [Security, System, Microsoft-Windows-Sysmon/Operational]

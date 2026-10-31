@@ -1,0 +1,163 @@
+title: SSH failed password
+id: vigil-0001
+name: ssh_failed_login
+status: stable
+description: A password authentication attempt over SSH failed.
+level: low
+author: Vigil
+tags:
+  - attack.credential-access
+  - attack.t1110
+logsource:
+  product: linux
+  service: sshd
+detection:
+  selection:
+    event.action: ssh_login
+    event.outcome: failure
+  condition: selection
+falsepositives:
+  - Users mistyping their password
+---
+title: SSH login attempt with invalid user
+id: vigil-0002
+name: ssh_invalid_user
+level: low
+tags:
+  - attack.discovery
+  - attack.t1087
+logsource:
+  product: linux
+  service: sshd
+detection:
+  selection:
+    message|contains: 'Invalid user'
+  condition: selection
+---
+title: Successful SSH login as root
+id: vigil-0003
+name: ssh_root_login
+description: Direct root login over SSH should be disabled (PermitRootLogin no).
+level: medium
+tags:
+  - attack.initial-access
+  - attack.t1078.003
+compliance:
+  - PCI-DSS 8.2.2
+  - CIS 5.2.10
+logsource:
+  product: linux
+  service: sshd
+detection:
+  selection:
+    event.action: ssh_login
+    event.outcome: success
+    user.name: root
+  condition: selection
+---
+title: Successful SSH login
+id: vigil-0004
+name: ssh_login_success
+level: informational
+tags:
+  - attack.initial-access
+  - attack.t1078
+logsource:
+  product: linux
+  service: sshd
+detection:
+  selection:
+    event.action: ssh_login
+    event.outcome: success
+  filter_root:
+    user.name: root
+  condition: selection and not filter_root
+---
+title: Sudo authentication failure
+id: vigil-0005
+name: sudo_auth_failure
+level: medium
+tags:
+  - attack.privilege-escalation
+  - attack.t1548.003
+logsource:
+  product: linux
+  service: sudo
+detection:
+  selection:
+    message|contains:
+      - 'incorrect password attempt'
+      - 'authentication failure'
+  condition: selection
+---
+title: Sudo spawned an interactive root shell
+id: vigil-0006
+name: sudo_root_shell
+level: medium
+tags:
+  - attack.privilege-escalation
+  - attack.t1548.003
+logsource:
+  product: linux
+  service: sudo
+detection:
+  selection:
+    event.action: sudo_command
+    process.command_line|endswith:
+      - '/bin/bash'
+      - '/bin/sh'
+      - '/bin/zsh'
+      - '/su'
+      - 'su -'
+      - '-i'
+      - '-s'
+  condition: selection
+---
+title: New local user account created
+id: vigil-0007
+name: user_created
+level: medium
+tags:
+  - attack.persistence
+  - attack.t1136.001
+compliance:
+  - PCI-DSS 8.2.4
+  - HIPAA 164.308(a)(3)(ii)(B)
+logsource:
+  product: linux
+  service: auth
+detection:
+  selection:
+    message|contains: 'new user: name='
+  condition: selection
+---
+title: User added to a privileged group
+id: vigil-0008
+name: user_added_privileged_group
+level: high
+tags:
+  - attack.persistence
+  - attack.privilege-escalation
+  - attack.t1098
+logsource:
+  product: linux
+  service: auth
+detection:
+  selection:
+    message|re: "(?i)(add|added) '?[a-z0-9_.-]+'? to (group )?'?(sudo|wheel|admin|root|docker)'?"
+  condition: selection
+---
+title: Local user account deleted
+id: vigil-0009
+name: user_deleted
+level: medium
+tags:
+  - attack.impact
+  - attack.t1531
+logsource:
+  product: linux
+  service: auth
+detection:
+  selection:
+    message|contains: 'delete user'
+  condition: selection

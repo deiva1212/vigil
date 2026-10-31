@@ -1,0 +1,149 @@
+# Vigil Linux baseline — a CIS-inspired subset. Each check passes when its
+# condition holds. File checks on missing files are "not_applicable" unless
+# `missing: fail` is set.
+#
+# Check types:
+#   file + contains / not_contains (regex, RE2 syntax)
+#   file_mode + max          (permission bits must not exceed max)
+#   file_exists / file_missing
+#   command + contains / not_contains / expect_empty
+policy: vigil-linux-baseline
+checks:
+  - id: ssh-001
+    title: SSH root login is disabled
+    rationale: Direct root logins remove accountability and are a prime brute-force target.
+    remediation: Set "PermitRootLogin no" in /etc/ssh/sshd_config and reload sshd.
+    compliance: [CIS 5.2.10, PCI-DSS 8.2.2, NIST-800-53 AC-6]
+    file: /etc/ssh/sshd_config
+    contains: '(?im)^\s*PermitRootLogin\s+no\b'
+  - id: ssh-002
+    title: SSH password authentication is disabled
+    rationale: Key-based authentication resists password guessing and credential stuffing.
+    remediation: Set "PasswordAuthentication no" in /etc/ssh/sshd_config.
+    compliance: [CIS 5.2.12, PCI-DSS 8.3.1]
+    file: /etc/ssh/sshd_config
+    contains: '(?im)^\s*PasswordAuthentication\s+no\b'
+  - id: ssh-003
+    title: SSH MaxAuthTries is 4 or less
+    rationale: Limits brute-force attempts per connection.
+    remediation: Set "MaxAuthTries 4" in /etc/ssh/sshd_config.
+    compliance: [CIS 5.2.7, PCI-DSS 8.3.4]
+    file: /etc/ssh/sshd_config
+    contains: '(?im)^\s*MaxAuthTries\s+[1-4]\s*$'
+  - id: ssh-004
+    title: SSH empty passwords are not permitted
+    rationale: Accounts with empty passwords must never be reachable remotely.
+    remediation: Set "PermitEmptyPasswords no" (or leave unset) in /etc/ssh/sshd_config.
+    compliance: [CIS 5.2.11, PCI-DSS 8.3.1]
+    file: /etc/ssh/sshd_config
+    not_contains: '(?im)^\s*PermitEmptyPasswords\s+yes\b'
+  - id: ssh-005
+    title: SSH X11 forwarding is disabled
+    rationale: X11 forwarding exposes the client display to a compromised server.
+    remediation: Set "X11Forwarding no" in /etc/ssh/sshd_config.
+    compliance: [CIS 5.2.6]
+    file: /etc/ssh/sshd_config
+    not_contains: '(?im)^\s*X11Forwarding\s+yes\b'
+  - id: acct-001
+    title: /etc/shadow permissions are 0640 or stricter
+    rationale: Password hashes must not be readable by unprivileged users.
+    remediation: chmod 0640 /etc/shadow (or 0600) and chown root:shadow /etc/shadow.
+    compliance: [CIS 6.1.3, PCI-DSS 8.3.2, HIPAA 164.312(a)(1)]
+    file_mode: /etc/shadow
+    max: '0640'
+  - id: acct-002
+    title: /etc/passwd permissions are 0644 or stricter
+    rationale: Account database must not be writable by others.
+    remediation: chmod 0644 /etc/passwd
+    compliance: [CIS 6.1.2]
+    file_mode: /etc/passwd
+    max: '0644'
+  - id: acct-003
+    title: No accounts have empty passwords
+    rationale: Empty passwords allow login without authentication.
+    remediation: Lock or set passwords for listed accounts (passwd -l <user>).
+    compliance: [CIS 6.2.1, PCI-DSS 8.3.1]
+    file: /etc/shadow
+    not_contains: '(?m)^[^:]+::'
+  - id: acct-004
+    title: root is the only UID 0 account
+    rationale: Extra UID 0 accounts are a common persistence backdoor.
+    remediation: Remove or re-number any non-root account with UID 0.
+    compliance: [CIS 6.2.9, PCI-DSS 8.2.1]
+    command: awk -F: '($3 == 0 && $1 != "root") {print $1}' /etc/passwd
+    expect_empty: true
+  - id: acct-005
+    title: Password maximum age is 365 days or less
+    rationale: Regular rotation limits the lifetime of a compromised password.
+    remediation: Set PASS_MAX_DAYS 365 (or lower) in /etc/login.defs.
+    compliance: [CIS 5.5.1.2, PCI-DSS 8.3.9]
+    file: /etc/login.defs
+    contains: '(?m)^\s*PASS_MAX_DAYS\s+([1-9]|[1-9][0-9]|[12][0-9][0-9]|3[0-5][0-9]|36[0-5])\s*$'
+  - id: sudo-001
+    title: /etc/sudoers permissions are 0440
+    rationale: sudoers must not be writable by anyone but root.
+    remediation: chmod 0440 /etc/sudoers
+    compliance: [CIS 5.3]
+    file_mode: /etc/sudoers
+    max: '0440'
+  - id: cron-001
+    title: /etc/crontab permissions are 0600 or stricter
+    rationale: World-readable crontabs reveal scheduled jobs; writable ones allow persistence.
+    remediation: chmod 0600 /etc/crontab
+    compliance: [CIS 5.1.2]
+    file_mode: /etc/crontab
+    max: '0600'
+  - id: kern-001
+    title: Address space layout randomization is fully enabled
+    rationale: ASLR makes memory-corruption exploits much harder.
+    remediation: sysctl -w kernel.randomize_va_space=2 and persist in /etc/sysctl.d/.
+    compliance: [CIS 1.5.3, NIST-800-53 SI-16]
+    file: /proc/sys/kernel/randomize_va_space
+    contains: '^2'
+  - id: kern-002
+    title: IP forwarding is disabled
+    rationale: Hosts that are not routers should not forward packets.
+    remediation: sysctl -w net.ipv4.ip_forward=0 (skip on container hosts and routers).
+    compliance: [CIS 3.1.1]
+    file: /proc/sys/net/ipv4/ip_forward
+    contains: '^0'
+  - id: kern-003
+    title: TCP SYN cookies are enabled
+    rationale: Mitigates SYN flood denial of service.
+    remediation: sysctl -w net.ipv4.tcp_syncookies=1
+    compliance: [CIS 3.3.8]
+    file: /proc/sys/net/ipv4/tcp_syncookies
+    contains: '^1'
+  - id: kern-004
+    title: ICMP redirects are not accepted
+    rationale: Redirects can be abused to reroute traffic through an attacker.
+    remediation: sysctl -w net.ipv4.conf.all.accept_redirects=0
+    compliance: [CIS 3.3.2]
+    file: /proc/sys/net/ipv4/conf/all/accept_redirects
+    contains: '^0'
+  - id: kern-005
+    title: Core dumps of setuid programs are restricted
+    rationale: Core dumps from privileged programs can leak secrets.
+    remediation: sysctl -w fs.suid_dumpable=0
+    compliance: [CIS 1.5.1]
+    file: /proc/sys/fs/suid_dumpable
+    contains: '^0'
+  - id: svc-001
+    title: Telnet server is not installed
+    rationale: Telnet sends credentials in clear text.
+    remediation: Remove the telnet server package (apt purge telnetd / dnf remove telnet-server).
+    compliance: [CIS 2.2.18, PCI-DSS 2.2.7]
+    file_missing: /usr/sbin/in.telnetd
+  - id: log-001
+    title: auditd is installed
+    rationale: Kernel audit logging records security-relevant system calls.
+    remediation: Install and enable auditd (apt install auditd / dnf install audit).
+    compliance: [CIS 4.1.1.1, PCI-DSS 10.2.1, HIPAA 164.312(b)]
+    file_exists: /usr/sbin/auditd
+  - id: fw-001
+    title: Host firewall has a default-deny inbound policy
+    rationale: Default deny limits exposure to services opened by mistake.
+    remediation: Configure iptables -P INPUT DROP or an nftables input chain with policy drop (ufw default deny incoming).
+    compliance: [CIS 3.5, PCI-DSS 1.3.1, NIST-800-53 SC-7]
+    command: (iptables -S 2>/dev/null; nft list ruleset 2>/dev/null) | head -500
+    contains: '(-P INPUT DROP|hook input.*policy drop|policy drop;)'

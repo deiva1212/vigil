@@ -1,0 +1,23 @@
+policy: vigil-macos-baseline
+checks:
+  - id: mac-001
+    title: Application firewall is enabled
+    rationale: Blocks unsolicited inbound connections.
+    remediation: sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+    compliance: [CIS 2.2.1]
+    command: /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
+    contains: '(?i)enabled'
+  - id: mac-002
+    title: Gatekeeper is enabled
+    rationale: Prevents running unsigned or unnotarized apps.
+    remediation: sudo spctl --master-enable
+    compliance: [CIS 2.5.2.1]
+    command: spctl --status
+    contains: 'assessments enabled'
+  - id: mac-003
+    title: FileVault disk encryption is on
+    rationale: Protects data at rest if the device is lost.
+    remediation: Enable FileVault in System Settings > Privacy & Security.
+    compliance: [CIS 2.5.1.1, HIPAA 164.312(a)(2)(iv)]
+    command: fdesetup status
+    contains: 'FileVault is On'

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vigil Console</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3 5 7v8c0 7 5 12 11 14 6-2 11-7 11-14V7z' fill='%2315243A' stroke='%238FB8FF' stroke-width='2'/%3E%3Cpath d='M11 16l3.5 3.5L21 13' fill='none' stroke='%23E3B341' stroke-width='2.5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="login" class="login" hidden>
+  <form id="login-form" class="login-card" autocomplete="on">
+    <div class="brand brand-lg"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 5 7v8c0 7 5 12 11 14 6-2 11-7 11-14V7z"/><path class="tick" d="M11 16l3.5 3.5L21 13"/></svg><span>Vigil</span></div>
+    <p class="muted">Sign in to the security console.</p>
+    <label>Username<input name="username" autocomplete="username" required></label>
+    <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+    <p id="login-error" class="error" role="alert"></p>
+    <button class="btn primary" type="submit">Sign in</button>
+    <p class="hint">First run? The admin password is printed in the server log and saved to <code>data/initial-admin-password.txt</code>.</p>
+  </form>
+</div>
+
+<div id="app" class="app" hidden>
+  <nav class="side" aria-label="Main">
+    <div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 5 7v8c0 7 5 12 11 14 6-2 11-7 11-14V7z"/><path class="tick" d="M11 16l3.5 3.5L21 13"/></svg><span>Vigil</span></div>
+    <a href="#/overview" data-nav="overview">Overview</a>
+    <a href="#/alerts" data-nav="alerts">Alerts <span id="nav-open" class="count"></span></a>
+    <a href="#/events" data-nav="events">Event search</a>
+    <a href="#/agents" data-nav="agents">Agents</a>
+    <a href="#/mitre" data-nav="mitre">ATT&amp;CK map</a>
+    <a href="#/vulns" data-nav="vulns">Vulnerabilities</a>
+    <a href="#/compliance" data-nav="compliance">Compliance</a>
+    <a href="#/rules" data-nav="rules">Detection rules</a>
+    <a href="#/response" data-nav="response">Active response</a>
+    <a href="#/settings" data-nav="settings">Settings</a>
+    <div class="side-foot">
+      <span id="who"></span>
+      <button class="link" data-action="logout">Sign out</button>
+    </div>
+  </nav>
+  <header class="top">
+    <button class="menu-btn" data-action="menu" aria-label="Open menu">☰</button>
+    <h1 id="page-title">Overview</h1>
+    <div class="live" id="live" title="Live updates"><span class="dot"></span><span id="live-text">Connecting</span></div>
+  </header>
+  <main id="view" tabindex="-1"></main>
+  <aside id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawer-head"><h2 id="drawer-title"></h2><button class="icon" data-action="close-drawer" aria-label="Close">✕</button></div>
+    <div id="drawer-body" class="drawer-body"></div>
+  </aside>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

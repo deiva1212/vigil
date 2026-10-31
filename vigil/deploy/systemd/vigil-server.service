@@ -1,0 +1,24 @@
+[Unit]
+Description=Vigil security server (SIEM/XDR manager)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=vigil
+Group=vigil
+WorkingDirectory=/opt/vigil
+ExecStart=/opt/vigil/vigil-server -config /etc/vigil/server.yml
+Restart=always
+RestartSec=5
+# hardening: the server needs no special privileges
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/vigil
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

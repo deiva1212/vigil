@@ -1,0 +1,67 @@
+title: SQL injection attempt in web request
+id: vigil-0301
+name: web_sqli
+level: medium
+tags:
+  - attack.initial-access
+  - attack.t1190
+compliance:
+  - PCI-DSS 6.4.1
+logsource:
+  category: webserver
+detection:
+  selection:
+    url.original|re: "(?i)(union(\\s|%20|\\+)+select|' ?or ?'?1'? ?= ?'?1|sleep\\(\\d+\\)|information_schema|%27(\\s|%20)*or)"
+  condition: selection
+---
+title: Path traversal attempt in web request
+id: vigil-0302
+name: web_path_traversal
+level: medium
+tags:
+  - attack.initial-access
+  - attack.t1190
+logsource:
+  category: webserver
+detection:
+  selection:
+    url.original|contains:
+      - '../'
+      - '..%2f'
+      - '%2e%2e/'
+      - '/etc/passwd'
+      - 'win.ini'
+  condition: selection
+---
+title: Known vulnerability scanner user agent
+id: vigil-0303
+name: web_scanner_ua
+level: low
+tags:
+  - attack.reconnaissance
+  - attack.t1595.002
+logsource:
+  category: webserver
+detection:
+  selection:
+    user_agent.original|contains:
+      - sqlmap
+      - nikto
+      - nuclei
+      - masscan
+      - zgrab
+      - gobuster
+      - dirbuster
+      - wpscan
+  condition: selection
+---
+title: Web request returned not found
+id: vigil-0304
+name: web_404
+level: informational
+logsource:
+  category: webserver
+detection:
+  selection:
+    http.response.status_code: '404'
+  condition: selection

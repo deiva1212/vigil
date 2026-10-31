@@ -1,0 +1,84 @@
+title: SSH brute force
+id: vigil-1001
+name: ssh_bruteforce
+description: Many failed SSH logins from one source address in a short window.
+level: high
+tags:
+  - attack.credential-access
+  - attack.t1110.001
+compliance:
+  - PCI-DSS 10.2.4
+  - PCI-DSS 8.3.4
+  - NIST-800-53 AC-7
+correlation:
+  type: event_count
+  rules:
+    - ssh_failed_login
+    - ssh_invalid_user
+  group-by:
+    - source.ip
+  timespan: 2m
+  condition:
+    gte: 5
+response:
+  action: block_ip
+  timeout: 30m
+  args:
+    ip: source.ip
+---
+title: Password spraying against SSH
+id: vigil-1002
+name: ssh_password_spray
+description: One source tried many different usernames.
+level: high
+tags:
+  - attack.credential-access
+  - attack.t1110.003
+correlation:
+  type: value_count
+  rules:
+    - ssh_failed_login
+    - ssh_invalid_user
+  group-by:
+    - source.ip
+  timespan: 5m
+  condition:
+    gte: 4
+    field: user.name
+---
+title: Web content discovery scan
+id: vigil-1003
+name: web_dir_scan
+description: One client generated many 404s across distinct paths.
+level: medium
+tags:
+  - attack.reconnaissance
+  - attack.t1595.003
+correlation:
+  type: value_count
+  rules:
+    - web_404
+  group-by:
+    - source.ip
+  timespan: 1m
+  condition:
+    gte: 20
+    field: url.path
+---
+title: Repeated sudo failures
+id: vigil-1004
+name: sudo_bruteforce
+level: high
+tags:
+  - attack.privilege-escalation
+  - attack.t1548.003
+correlation:
+  type: event_count
+  rules:
+    - sudo_auth_failure
+  group-by:
+    - host.name
+    - user.name
+  timespan: 5m
+  condition:
+    gte: 3
